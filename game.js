@@ -2,7 +2,6 @@
 /* global document window performance requestAnimationFrame console */
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-const scoreEl = document.getElementById('score');
 const restartBtn = document.getElementById('restart');
 const W = canvas.width, H = canvas.height;
 
@@ -115,6 +114,7 @@ function placeBoyOnRandomBed(){
 
 function reset(){
   score = 0; updateScore(); removeTimer = 0; lastTime = performance.now(); gameOver = false; gameOverButton = null;
+  removalCount = 0;
   initBeds(); placeBoyOnRandomBed();
   // hide DOM restart if present
   if(restartBtn) restartBtn.style.display = 'none';
@@ -336,7 +336,6 @@ window.addEventListener('keydown', e=>{
       playBounce();
       sprite.frameIndex = (sprite.frameIndex + 1) % sprite.frames.length;
     }
-    // no double-jump: additional Space presses while airborne do nothing
   }
 });
 window.addEventListener('keyup', e=>{ keys[e.key]=false; });
@@ -357,7 +356,24 @@ canvas.addEventListener('pointermove', e=>{
 
 function updateBeds(dt){ for(const b of beds) if(!b.active && b.alpha>0){ b.alpha -= dt/600; if(b.alpha<0) b.alpha=0; } }
 
-function removeRandomBed(){ const active = beds.filter(b=>b.active); if(active.length===0) return; const idx = Math.floor(Math.random()*active.length); active[idx].active=false; playBedRemove(); }
+let removalCount = 0;
+function removeRandomBed(){
+  const active = beds.filter(b=>b.active);
+  if(active.length===0) return;
+  const idx = Math.floor(Math.random()*active.length);
+  active[idx].active=false;
+  playBedRemove();
+  removalCount++;
+  // Every 2nd removal, respawn a random inactive bed
+  if(removalCount % 2 === 0){
+    const inactive = beds.filter(b=>!b.active);
+    if(inactive.length>0){
+      const pick = inactive[Math.floor(Math.random()*inactive.length)];
+      pick.active = true;
+      pick.alpha = 1;
+    }
+  }
+}
 
 function physics(){
   if(keys.ArrowLeft && !keys.ArrowRight) boy.vx = -4; else if(keys.ArrowRight && !keys.ArrowLeft) boy.vx = 4; else { boy.vx *= 0.92; if(Math.abs(boy.vx)<0.05) boy.vx=0; }
@@ -373,16 +389,52 @@ function physics(){
 
 function draw(){ ctx.clearRect(0,0,W,H); drawBackground(); ctx.fillStyle='#7b5a3c'; ctx.fillRect(0,H-48,W,48); for(const b of beds) drawBed(b); drawBoy();
   // score (large, centered at top)
-  ctx.save(); ctx.fillStyle='#fff'; ctx.font='bold 48px monospace'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(String(score), W / 2, 14); ctx.restore();
+  ctx.save(); ctx.fillStyle='#fff'; ctx.font='bold 72px monospace'; ctx.textAlign='center'; ctx.textBaseline='top'; ctx.fillText(String(score), W / 2, 10); ctx.restore();
   // scanlines
   ctx.save(); ctx.globalCompositeOperation='overlay'; ctx.fillStyle='rgba(0,0,0,0.04)'; for(let y=0;y<H;y+=4) ctx.fillRect(0,y,W,1); ctx.restore(); // vignette
   ctx.save(); const vg = ctx.createRadialGradient(W/2,H/2,Math.min(W,H)/6,W/2,H/2,Math.max(W,H)/1.1); vg.addColorStop(0,'rgba(0,0,0,0)'); vg.addColorStop(0.75,'rgba(0,0,0,0.06)'); vg.addColorStop(1,'rgba(0,0,0,0.25)'); ctx.globalCompositeOperation='multiply'; ctx.fillStyle = vg; ctx.fillRect(0,0,W,H); ctx.restore();
 }
 
-function showGameOver(){ ctx.save(); ctx.fillStyle='rgba(0,0,0,0.45)'; ctx.fillRect(0,0,W,H); ctx.fillStyle='#fff'; ctx.font='bold 36px Inter, system-ui'; ctx.textAlign='center'; ctx.fillText('Game Over', W/2, H/2 - 10); ctx.font='20px Inter, system-ui'; ctx.fillText(`Final score: ${score}`, W/2, H/2 + 30); ctx.restore();
-  // draw in-canvas Restart button
-  const btnW = Math.min(300, Math.floor(W * 0.18)); const btnH = Math.min(64, Math.floor(H * 0.08)); const bx = Math.round(W/2 - btnW/2); const by = Math.round(H/2 + 40);
-  const r = 10; ctx.save(); ctx.fillStyle = '#ff6b6b'; ctx.beginPath(); ctx.moveTo(bx + r, by); ctx.lineTo(bx + btnW - r, by); ctx.quadraticCurveTo(bx + btnW, by, bx + btnW, by + r); ctx.lineTo(bx + btnW, by + btnH - r); ctx.quadraticCurveTo(bx + btnW, by + btnH, bx + btnW - r, by + btnH); ctx.lineTo(bx + r, by + btnH); ctx.quadraticCurveTo(bx, by + btnH, bx, by + btnH - r); ctx.lineTo(bx, by + r); ctx.quadraticCurveTo(bx, by, bx + r, by); ctx.closePath(); ctx.fill(); ctx.fillStyle='#fff'; ctx.font='bold 18px Inter, system-ui'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText('Restart', bx + btnW/2, by + btnH/2); ctx.restore();
+function showGameOver(){
+  // Full solid black overlay covering the entire canvas
+  ctx.save();
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 48px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Game Over', W/2, H/2 - 30);
+  ctx.font = '24px monospace';
+  ctx.fillText(`Final score: ${score}`, W/2, H/2 + 10);
+  ctx.restore();
+
+  // draw in-canvas Restart button (unchanged)
+  const btnW = Math.min(300, Math.floor(W * 0.18));
+  const btnH = Math.min(64, Math.floor(H * 0.08));
+  const bx = Math.round(W/2 - btnW/2);
+  const by = Math.round(H/2 + 60);
+  const r = 10;
+  ctx.save();
+  ctx.fillStyle = '#ff6b6b';
+  ctx.beginPath();
+  ctx.moveTo(bx + r, by);
+  ctx.lineTo(bx + btnW - r, by);
+  ctx.quadraticCurveTo(bx + btnW, by, bx + btnW, by + r);
+  ctx.lineTo(bx + btnW, by + btnH - r);
+  ctx.quadraticCurveTo(bx + btnW, by + btnH, bx + btnW - r, by + btnH);
+  ctx.lineTo(bx + r, by + btnH);
+  ctx.quadraticCurveTo(bx, by + btnH, bx, by + btnH - r);
+  ctx.lineTo(bx, by + r);
+  ctx.quadraticCurveTo(bx, by, bx + r, by);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = '#fff';
+  ctx.font = 'bold 18px monospace';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('Restart', bx + btnW/2, by + btnH/2);
+  ctx.restore();
   gameOverButton = { x: bx, y: by, w: btnW, h: btnH };
   playGameOver();
 }
