@@ -361,13 +361,14 @@ function removeRandomBed(){
   const active = beds.filter(b=>b.active);
   if(active.length===0) return;
   const idx = Math.floor(Math.random()*active.length);
-  active[idx].active=false;
+  const removed = active[idx];
+  removed.active = false;
   playBedRemove();
   removalCount++;
-  // Every 2nd removal, respawn a random inactive bed
+  // Every 2nd removal, respawn a random *previously*-inactive bed (not the one just removed)
   if(removalCount % 2 === 0){
-    const inactive = beds.filter(b=>!b.active);
-    if(inactive.length>0){
+    const inactive = beds.filter(b => !b.active && b !== removed);
+    if(inactive.length > 0){
       const pick = inactive[Math.floor(Math.random()*inactive.length)];
       pick.active = true;
       pick.alpha = 1;

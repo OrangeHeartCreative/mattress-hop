@@ -2,7 +2,7 @@ Mattress Hop — Local Build & Changes (summary)
 
 This README summarizes the gameplay and visual changes made on Feb 24, 2026.
 
-Highlights
+## Highlights
 - Atari-style hero sprite (16×16 pixel, 2-frame walk cycle).
 - Single fixed jump: Space now performs one jump from the ground (no double-jump).
 - Beds use a chunky Atari look (headboard, legs, blanket, pillow).
@@ -13,24 +13,14 @@ Highlights
 - Score is drawn on the canvas (large, centered at top). All in-game text uses the same monospace score font.
 - Game Over is a full solid black screen with an in-canvas Restart button.
 
-How to run locally
-
-1. Serve the project root with a static server (Python 3):
-
-   python3 -m http.server 8000 --bind 127.0.0.1
-
-2. Open http://127.0.0.1:8000 in your browser.
-
-Files changed
+## Files changed
 - `game.js` — main gameplay, rendering, audio, and background code (sprite, beds, score, Game Over, fonts)
 - `index.html` — title-screen instructions updated; HTML score removed
 - `README.md` — this file
 
-Developer notes
+## Developer notes
 - Canvas size: 1200×800; floor is at `H - 48`.
 - Score is drawn in `game.js` (large monospace, centered). The font is also used for Game Over text and button.
 - Bed logic: see `removeRandomBed()` and `updateBeds()` in `game.js` for removal/respawn behavior. The `removeInterval` is currently 10000 (10s).
 - Sprite generation: `createSpriteFrames()` defines the pixel maps and `palette`.
 - Audio: WebAudio synths for bounce, bed remove, start, and title music. Title music is gated to avoid auto-start during gameplay.
-
-If you want any of the above behavior tuned (jump strength, bed timing, font size, or background density), tell me which value to change and I will update the code and tests.
