@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Mattress Hop</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="stage">
+    
+    <canvas id="game" width="1200" height="800" tabindex="0"></canvas>
+    <div id="title-screen">
+      <div class="title-inner">
+        <img id="title-logo" src="assets/logo.svg" alt="Don't Jump on the Bed! logo" />
+        <button id="start-btn">Start</button>
+        <div class="instructions">
+          <div>Use Arrow keys to move.</div>
+          <div>Press Space to jump. No double-jump.</div>
+          <div>Beds disappear every 10s — stay airborne!</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
